@@ -4,19 +4,23 @@ import 'package:cityvoice/models/district.dart';
 import 'package:cityvoice/models/survey_stat.dart';
 import 'package:cityvoice/pages/district_correlation_chart.dart';
 
+
+/// Экран отображения результатов опроса (корреляция оценки и количества жалоб) для конкретного района.
 class DistrictSurveyStatsScreen extends StatefulWidget {
-  final District district;
+  final District district; // Район, для которого показываются данные
   const DistrictSurveyStatsScreen({super.key, required this.district});
 
   @override
-  State<DistrictSurveyStatsScreen> createState() => _DistrictSurveyStatsScreenState();
+  State<DistrictSurveyStatsScreen> createState() =>
+      _DistrictSurveyStatsScreenState();
 }
 
 class _DistrictSurveyStatsScreenState extends State<DistrictSurveyStatsScreen> {
-  final ApiService _api = ApiService();
-  bool _loading = true;
-  List<CategoryCorrelationStat> _data = [];
+  final ApiService _api = ApiService(); // Сервис для работы с API
+  bool _loading = true; // Флаг загрузки
+  List<CategoryCorrelationStat> _data = []; // Список с данными по корреляции
 
+  // Список цветов для графиков (баров), чтобы визуально отличать категории
   final List<Color> _barColors = [
     Colors.green,
     Colors.green[800]!,
@@ -37,12 +41,14 @@ class _DistrictSurveyStatsScreenState extends State<DistrictSurveyStatsScreen> {
   @override
   void initState() {
     super.initState();
-    _loadStats();
+    _loadStats(); // Загружаем данные при инициализации
   }
 
+  // Метод для загрузки статистики по району
   Future<void> _loadStats() async {
     try {
-      final result = await _api.getDistrictCategoryCorrelationStats(widget.district.id);
+      final result =
+          await _api.getDistrictCategoryCorrelationStats(widget.district.id);
       setState(() {
         _data = result;
         _loading = false;

@@ -1,14 +1,12 @@
-import 'dart:io';
-import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
+import 'dart:io'; 
+import 'package:flutter/material.dart'; 
+import 'package:image_picker/image_picker.dart'; 
 
-/// Утилитарный класс, который показывает bottom sheet
-/// и возвращает выбранный файл или null.
+// Класс для выбора фотографии
 class PhotoPicker {
-  /// Показывает модальное окно и даёт пользователю
-  /// выбрать камеру или галерею.
-/// Возвращает [File] или null.
+  // Метод, который открывает диалог выбора изображения и возвращает файл (File), если пользователь выбрал изображение
   static Future<File?> pickImage(BuildContext context) async {
+    // Отображаем нижнее модальное окно с выбором источника
     final ImageSource? source = await showModalBottomSheet<ImageSource>(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -18,28 +16,34 @@ class PhotoPicker {
         child: Wrap(
           children: [
             ListTile(
-              leading: const Icon(Icons.camera_alt),
-              title: const Text('Снять новое'),
-              onTap: () => Navigator.pop(context, ImageSource.camera),
+              leading: const Icon(Icons.camera_alt), // Иконка "Камера"
+              title: const Text('Снять новое'), // Текст "Снять новое"
+              onTap: () => Navigator.pop(context, ImageSource.camera), // Закрываем модалку и передаём камеру
             ),
             ListTile(
-              leading: const Icon(Icons.photo_library),
-              title: const Text('Выбрать из галереи'),
-              onTap: () => Navigator.pop(context, ImageSource.gallery),
+              leading: const Icon(Icons.photo_library), // Иконка "Галерея"
+              title: const Text('Выбрать из галереи'), // Текст "Выбрать из галереи"
+              onTap: () => Navigator.pop(context, ImageSource.gallery), // Закрываем модалку и передаём галерею
             ),
           ],
         ),
       ),
     );
 
+    // Если пользователь не выбрал источник (нажал "Отмена"), возвращаем null
     if (source == null) return null;
 
+    // Используем ImagePicker для выбора/съёмки изображения
     final picker = ImagePicker();
     final XFile? file = await picker.pickImage(
       source: source,
-      imageQuality: 80,
+      imageQuality: 80, // Снижаем качество до 80% (для экономии памяти и сетевого трафика)
     );
+
+    // Если пользователь не выбрал изображение, возвращаем null
     if (file == null) return null;
+
+    // Преобразуем путь к файлу в объект File и возвращаем
     return File(file.path);
   }
 }

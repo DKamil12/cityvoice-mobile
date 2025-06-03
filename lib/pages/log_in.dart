@@ -1,62 +1,14 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:cityvoice/services/api_service.dart';
 import 'package:cityvoice/services/auth_service.dart';
 import 'package:http/http.dart' as http;
 import 'menu_shell.dart';
-import 'package:flutter/foundation.dart';
+import 'package:cityvoice/pages/password_widgets.dart';
 import 'register.dart';
 
-class PasswordField extends StatefulWidget {
-  final TextEditingController controller;
 
-  const PasswordField({super.key, required this.controller});
-
-  @override
-  State<PasswordField> createState() => _PasswordFieldState();
-}
-
-class _PasswordFieldState extends State<PasswordField> {
-  bool _isObscure = true;
-
-  void _toggleVisibility() {
-    setState(() {
-      _isObscure = !_isObscure;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return TextFormField(
-      controller: widget.controller,
-      validator: (value) {
-        if (value == null || value.length < 8) {
-          return 'Пароль должен содержать не менее 8 символов!';
-        }
-        return null;
-      },
-      decoration: InputDecoration(
-        hintText: 'Введите пароль',
-        border: OutlineInputBorder(
-          borderSide: BorderSide(color: Colors.black),
-          borderRadius: BorderRadius.all(Radius.circular(8)),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: Colors.blue, width: 2),
-          borderRadius: BorderRadius.all(Radius.circular(8)),
-        ),
-        suffixIcon: IconButton(
-          onPressed: _toggleVisibility,
-          icon: Icon(_isObscure ? Icons.visibility : Icons.visibility_off),
-        ),
-      ),
-      style: TextStyle(fontSize: 16),
-      obscureText: _isObscure,
-    );
-  }
-}
-
+/// Основная форма входа (логина)
 class CustomForm extends StatefulWidget {
   const CustomForm({super.key});
 
@@ -74,11 +26,13 @@ class _CustomFormState extends State<CustomForm> {
 
   @override
   void dispose() {
+    // Освобождение ресурсов
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
+  /// Отправка запроса авторизации и сохранение токенов
   void _login() async {
     final response = await http.post(
       Uri.parse('https://cityvoice-api.onrender.com/api/v1/token/'),
@@ -89,12 +43,11 @@ class _CustomFormState extends State<CustomForm> {
       }),
     );
 
-    debugPrint('works');
-
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       await authService.saveTokens(data['access'], data['refresh']);
 
+      // Переход к главному экрану приложения
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const MainShell()),
@@ -106,10 +59,9 @@ class _CustomFormState extends State<CustomForm> {
     }
   }
 
+  /// Отображение ошибки
   void _showErrorMessage(BuildContext context, String message) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
@@ -122,21 +74,23 @@ class _CustomFormState extends State<CustomForm> {
     return Form(
       key: _keyForm,
       child: Padding(
-        padding: EdgeInsets.symmetric(vertical: 60, horizontal: 25),
+        padding: const EdgeInsets.symmetric(vertical: 60, horizontal: 25),
         child: Center(
           child: Column(
             children: [
               Text('Войти', style: textStyle),
-              SizedBox(height: 10),
-              Text(
-                'Добро пожаловать! (тест)',
+              const SizedBox(height: 10),
+              const Text(
+                'Добро пожаловать!',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
+
+              // Поле для ввода email
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Email', style: TextStyle(fontSize: 14)),
+                  const Text('Email', style: TextStyle(fontSize: 14)),
                   TextFormField(
                     controller: _emailController,
                     validator: (value) {
@@ -145,10 +99,9 @@ class _CustomFormState extends State<CustomForm> {
                       }
                       return null;
                     },
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       hintText: 'Example@email.com',
                       border: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.black),
                         borderRadius: BorderRadius.all(Radius.circular(8)),
                       ),
                       focusedBorder: OutlineInputBorder(
@@ -156,25 +109,30 @@ class _CustomFormState extends State<CustomForm> {
                         borderRadius: BorderRadius.all(Radius.circular(8)),
                       ),
                     ),
-                    style: TextStyle(fontSize: 16),
+                    style: const TextStyle(fontSize: 16),
                   ),
                 ],
               ),
+
+              // Поле для ввода пароля (с кастомным виджетом)
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Пароль', style: TextStyle(fontSize: 14)),
+                  const Text('Пароль', style: TextStyle(fontSize: 14)),
                   PasswordField(controller: _passwordController),
                 ],
               ),
-              SizedBox(height: 20),
+
+              const SizedBox(height: 20),
+
+              // Кнопка входа
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    padding: EdgeInsets.symmetric(vertical: 20),
-                    shape: RoundedRectangleBorder(
+                    backgroundColor: Colors.teal,
+                    padding: const EdgeInsets.symmetric(vertical: 20),
+                    shape: const RoundedRectangleBorder(
                       borderRadius: BorderRadius.all(Radius.circular(8)),
                     ),
                   ),
@@ -183,7 +141,7 @@ class _CustomFormState extends State<CustomForm> {
                       _login();
                     }
                   },
-                  child: Text(
+                  child: const Text(
                     'Войти',
                     style: TextStyle(
                       color: Colors.white,
@@ -192,7 +150,10 @@ class _CustomFormState extends State<CustomForm> {
                   ),
                 ),
               ),
+
               const SizedBox(height: 16),
+
+              // Ссылка на экран регистрации
               TextButton(
                 onPressed: () {
                   Navigator.pushReplacement(
@@ -210,11 +171,12 @@ class _CustomFormState extends State<CustomForm> {
   }
 }
 
+/// Обёртка для отображения экрана входа
 class LogInPage extends StatelessWidget {
   const LogInPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(body: CustomForm());
+    return const Scaffold(body: CustomForm());
   }
 }

@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:cityvoice/models/district.dart';
-import 'package:cityvoice/pages/DistrictListScreen.dart';
-import 'package:cityvoice/pages/DistrictStatsScreen.dart';
+import 'package:cityvoice/pages/district_list_screen.dart';
+import 'package:cityvoice/pages/district_stats_screen.dart';
 
+
+// Виджет предварительного просмотра районов с горизонтальным списком
 class DistrictsPreviewWidget extends StatelessWidget {
-  final List<District> districts;
+  final List<District> districts; // Список районов, который отображается
 
   const DistrictsPreviewWidget({super.key, required this.districts});
 
@@ -13,26 +15,27 @@ class DistrictsPreviewWidget extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Заголовок и кнопка "Все" для перехода на полный список районов
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             const Text(
-              "Статистика активности",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              "Активность по районам",
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             TextButton(
-              onPressed:
-                  () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const DistrictListScreen(),
-                    ),
-                  ),
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const DistrictListScreen(),
+                ),
+              ),
               child: const Text('Все', style: TextStyle(color: Colors.green)),
             ),
           ],
         ),
         const SizedBox(height: 12),
+        // Горизонтальный список с карточками районов
         SizedBox(
           height: 160,
           child: ListView.separated(
@@ -42,13 +45,13 @@ class DistrictsPreviewWidget extends StatelessWidget {
             itemBuilder: (context, index) {
               final district = districts[index];
               return GestureDetector(
-                onTap:
-                    () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => DistrictStatsScreen(district: district),
-                      ),
-                    ),
+                // При нажатии — переход к экрану со статистикой района
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => DistrictStatsScreen(district: district),
+                  ),
+                ),
                 child: Container(
                   width: 130,
                   decoration: BoxDecoration(
@@ -65,6 +68,7 @@ class DistrictsPreviewWidget extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // Картинка района
                       Container(
                         height: 90,
                         decoration: BoxDecoration(
@@ -82,6 +86,7 @@ class DistrictsPreviewWidget extends StatelessWidget {
                             width: double.infinity,
                             height: 90,
                             fit: BoxFit.cover,
+                            // Обработка ошибок при загрузке изображения
                             errorBuilder: (context, error, stackTrace) {
                               return const Center(
                                 child: Icon(
@@ -91,6 +96,7 @@ class DistrictsPreviewWidget extends StatelessWidget {
                                 ),
                               );
                             },
+                            // Отображение индикатора загрузки
                             loadingBuilder: (context, child, progress) {
                               if (progress == null) return child;
                               return const Center(
@@ -100,6 +106,7 @@ class DistrictsPreviewWidget extends StatelessWidget {
                           ),
                         ),
                       ),
+                      // Название района
                       Padding(
                         padding: const EdgeInsets.all(8.0),
                         child: Column(

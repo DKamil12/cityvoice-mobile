@@ -8,6 +8,7 @@ import 'package:cityvoice/pages/choose_photo.dart';
 import 'package:cityvoice/pages/map_picker.dart';
 import 'package:cityvoice/services/api_service.dart';
 
+// Экран для создания новой жалобы
 class NewReportScreen extends StatefulWidget {
   const NewReportScreen({Key? key}) : super(key: key);
 
@@ -16,15 +17,16 @@ class NewReportScreen extends StatefulWidget {
 }
 
 class _NewReportScreenState extends State<NewReportScreen> {
-  final _formKey = GlobalKey<FormState>();
-  final _titleController = TextEditingController();
-  final _descController = TextEditingController();
+  final _formKey = GlobalKey<FormState>(); // Ключ для формы
+  final _titleController = TextEditingController(); // Контроллер для заголовка
+  final _descController = TextEditingController(); // Контроллер для описания
 
-  File? _pickedImage;
-  LatLng? _pickedLocation;
-  String? _pickedAddress;
-  String? _selectedCategoryId;
+  File? _pickedImage; // Выбранное изображение
+  LatLng? _pickedLocation; // Выбранные координаты
+  String? _pickedAddress; // Определённый адрес
+  String? _selectedCategoryId; // Выбранная категория
 
+  // Выбор и установка фото
   Future<void> _pickAndSetImage() async {
     final File? image = await PhotoPicker.pickImage(context);
     if (image != null && mounted) {
@@ -32,6 +34,7 @@ class _NewReportScreenState extends State<NewReportScreen> {
     }
   }
 
+  // Получение адреса по координатам (через OpenStreetMap API)
   Future<String?> _getAddressFromCoordinates(LatLng location) async {
     final url = Uri.parse(
       'https://nominatim.openstreetmap.org/reverse?lat=${location.latitude}&lon=${location.longitude}&format=json',
@@ -48,6 +51,7 @@ class _NewReportScreenState extends State<NewReportScreen> {
     }
   }
 
+  // Отправка формы (создание жалобы)
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     if (_pickedLocation == null) {
@@ -70,10 +74,11 @@ class _NewReportScreenState extends State<NewReportScreen> {
       );
 
       if (result.error == null) {
+        // Если успешно — уведомляем пользователя
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Жалоба успешно отправлена')),
         );
-        Navigator.pop(context, true);
+        Navigator.pop(context, true); // Закрываем экран
       } else {
         _showErrorMessage('${result.error}');
         return;
@@ -84,6 +89,7 @@ class _NewReportScreenState extends State<NewReportScreen> {
     }
   }
 
+  // Показать сообщение об ошибке
   void _showErrorMessage(String message) {
     ScaffoldMessenger.of(
       context,
@@ -104,6 +110,7 @@ class _NewReportScreenState extends State<NewReportScreen> {
           key: _formKey,
           child: ListView(
             children: [
+              // Блок для выбора изображения
               GestureDetector(
                 onTap: _pickAndSetImage,
                 child: Container(
@@ -141,6 +148,7 @@ class _NewReportScreenState extends State<NewReportScreen> {
                 ),
               ),
               const SizedBox(height: 16),
+              // Поле ввода заголовка
               TextFormField(
                 controller: _titleController,
                 decoration: const InputDecoration(
@@ -154,6 +162,7 @@ class _NewReportScreenState extends State<NewReportScreen> {
                             : null,
               ),
               const SizedBox(height: 16),
+              // Поле ввода описания
               TextFormField(
                 controller: _descController,
                 maxLines: 4,
@@ -168,6 +177,7 @@ class _NewReportScreenState extends State<NewReportScreen> {
                             : null,
               ),
               const SizedBox(height: 16),
+              // Выбор категории
               DropdownButtonFormField<String>(
                 isExpanded: true,
                 value: _selectedCategoryId,
@@ -233,6 +243,7 @@ class _NewReportScreenState extends State<NewReportScreen> {
                 ),
               ),
               const SizedBox(height: 16),
+              // Выбор местоположения
               GestureDetector(
                 onTap: () async {
                   final LatLng? point = await Navigator.of(
@@ -259,6 +270,7 @@ class _NewReportScreenState extends State<NewReportScreen> {
                       _pickedLocation != null
                           ? Stack(
                             children: [
+                              // Отображение карты с маркером
                               FlutterMap(
                                 options: MapOptions(
                                   center: _pickedLocation,
@@ -312,6 +324,7 @@ class _NewReportScreenState extends State<NewReportScreen> {
                 ),
               ),
               const SizedBox(height: 24),
+              // Кнопка отправки жалобы
               ElevatedButton(
                 onPressed: _submit,
                 style: ElevatedButton.styleFrom(

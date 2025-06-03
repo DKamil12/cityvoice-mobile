@@ -1,38 +1,3 @@
-class SurveyStat {
-  final String question;
-  final double average;
-
-  SurveyStat({
-    required this.question,
-    required this.average,
-  });
-
-  factory SurveyStat.fromJson(Map<String, dynamic> json) {
-    return SurveyStat(
-      question: json['question__text'],
-      average: json['average_rating'],
-    );
-  }
-}
-
-
-class CityWideSurveyStat {
-  final String question;
-  final double average;
-
-  CityWideSurveyStat({
-    required this.question,
-    required this.average,
-  });
-
-  factory CityWideSurveyStat.fromJson(Map<String, dynamic> json) {
-    return CityWideSurveyStat(
-      question: json['question'],
-      average: json['average'],
-    );
-  }
-}
-
 class CategoryCorrelationStat {
   final int categoryId;
   final String categoryName;

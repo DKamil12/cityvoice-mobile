@@ -12,11 +12,13 @@ import 'package:cityvoice/models/district_stat.dart';
 import 'package:cityvoice/models/question.dart';
 import 'package:cityvoice/models/product.dart';
 
+/// Сервис для общения с API приложения CityVoice
 class ApiService {
   final String _baseUrl = 'https://cityvoice-api.onrender.com/api/v1';
   final String _host = 'cityvoice-api.onrender.com';
   final AuthService _auth = AuthService();
 
+  /// Отправка новой жалобы (с возможной фотографией)
   Future<Result<void>> submitReport({
     required String title,
     required String description,
@@ -28,6 +30,7 @@ class ApiService {
     final url = Uri.parse('$_baseUrl/reports/reports/');
     final token = await _auth.getValidAccessToken();
 
+    // Multipart-запрос для отправки с изображением
     final request = http.MultipartRequest('POST', url);
 
     request.headers['Authorization'] = 'Bearer $token';
@@ -63,6 +66,7 @@ class ApiService {
     }
   }
 
+  /// Получение адреса по координатам (через Nominatim)
   Future<String?> getAddressFromCoordinates(LatLng location) async {
     final url = Uri.parse(
       'https://nominatim.openstreetmap.org/reverse?lat=${location.latitude}&lon=${location.longitude}&format=json',
@@ -79,10 +83,11 @@ class ApiService {
     }
   }
 
+  /// Получение списка заявок пользователя
   Future<List<Report>> getUserReports() async {
     final token = await _auth.getValidAccessToken();
     final response = await http.get(
-      Uri.parse('$_baseUrl/reports/reports/'),
+      Uri.parse('$_baseUrl/reports/my-reports/'),
       headers: {'Authorization': 'Bearer $token'},
     );
 
@@ -94,7 +99,8 @@ class ApiService {
     }
   }
 
-  Future<Map<String, int>> getUserReportStats() async {
+  /// Статистика заявок пользователя по статусам
+  Future<Map<String, int>> getUserReportCount() async {
     final all = await getUserReports();
     final stats = <String, int>{};
     for (final r in all) {
@@ -103,6 +109,17 @@ class ApiService {
     return stats;
   }
 
+  /// Статистика по всем заявкам (для сотрудников)
+  Future<Map<String, int>> getReportsCount() async {
+    final all = await getReports();
+    final stats = <String, int>{};
+    for (final r in all) {
+      stats[r.status] = (stats[r.status] ?? 0) + 1;
+    }
+    return stats;
+  }
+
+  /// Получение всех заявок (с фильтрами)
   Future<List<Report>> getReports({
     int? districtId,
     int? categoryId,
@@ -135,6 +152,7 @@ class ApiService {
     }
   }
 
+  /// Обновление статуса заявки
   Future<Result<void>> updateReportStatus({
     required int reportId,
     required String comment,
@@ -157,6 +175,7 @@ class ApiService {
     }
   }
 
+  /// Список всех районов
   Future<List<District>> getDistricts() async {
     final token = await _auth.getValidAccessToken();
     final response = await http.get(
@@ -175,6 +194,7 @@ class ApiService {
     }
   }
 
+  /// Статистика категорий по району
   Future<DistrictStats> getDistrictCategoryStats({
     required int districtId,
     String? startDate,
@@ -206,6 +226,7 @@ class ApiService {
     }
   }
 
+  /// Получение списка вопросов для опроса
   Future<List<SurveyQuestion>> loadQuestions() async {
     final token = await _auth.getValidAccessToken();
     final uri = Uri.parse('$_baseUrl/statistics/survey/questions/');
@@ -228,6 +249,7 @@ class ApiService {
     }
   }
 
+  /// Отправка ответов на опрос
   Future<void> submitResponses(Map<int, int> responses, int districtId) async {
     final token = await _auth.getValidAccessToken();
     final uri = Uri.parse('$_baseUrl/statistics/survey/submit/');
@@ -256,6 +278,7 @@ class ApiService {
     }
   }
 
+  /// Проверка доступности опроса
   Future<bool> isSurveyAvailable() async {
     final token = await _auth.getValidAccessToken();
     final uri = Uri.parse('$_baseUrl/statistics/survey/available/');
@@ -276,26 +299,7 @@ class ApiService {
     }
   }
 
-  Future<List<CityWideSurveyStat>> getCitywideSurveyStats() async {
-    final token = await _auth.getValidAccessToken();
-    final uri = Uri.parse('$_baseUrl/statistics/survey/statistics/citywide/');
-
-    final response = await http.get(
-      uri,
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      },
-    );
-
-    if (response.statusCode == 200) {
-      final List<dynamic> data = jsonDecode(utf8.decode(response.bodyBytes));
-      return data.map((e) => CityWideSurveyStat.fromJson(e)).toList();
-    } else {
-      throw Exception('Не удалось загрузить городскую статистику');
-    }
-  }
-
+  /// Городская корреляция по категориям
   Future<List<CategoryCorrelationStat>> getCategoryCorrelationStats() async {
     final token = await _auth.getValidAccessToken();
     final uri = Uri.parse('$_baseUrl/charts/statistics/citywide/correlation/');
@@ -316,6 +320,7 @@ class ApiService {
     }
   }
 
+  /// Корреляция по категориям для конкретного района
   Future<List<CategoryCorrelationStat>> getDistrictCategoryCorrelationStats(
     int districtId,
   ) async {
@@ -340,30 +345,7 @@ class ApiService {
     }
   }
 
-  Future<List<SurveyStat>> getDistrictSurveyStats(int districtId) async {
-    final token = await _auth.getValidAccessToken();
-    final uri = Uri.parse(
-      '$_baseUrl/statistics/survey/statistics/?district=$districtId',
-    );
-
-    final response = await http.get(
-      uri,
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      },
-    );
-
-    if (response.statusCode == 200) {
-      final List<dynamic> jsonList = jsonDecode(
-        utf8.decode(response.bodyBytes),
-      );
-      return jsonList.map((e) => SurveyStat.fromJson(e)).toList();
-    } else {
-      throw Exception('Не удалось загрузить статистику для района');
-    }
-  }
-
+  /// Проверка, есть ли награда за заявку
   Future<bool> checkRewardExists(int reportId) async {
     final token = await _auth.getValidAccessToken();
     final uri = Uri.parse('$_baseUrl/rewards/check/?report_id=$reportId');
@@ -383,6 +365,7 @@ class ApiService {
     }
   }
 
+  /// Получение списка доступных товаров
   Future<List<Product>> getProducts() async {
     final token = await _auth.getValidAccessToken();
     final response = await http.get(
@@ -397,6 +380,7 @@ class ApiService {
     }
   }
 
+  /// Получение баланса пользователя
   Future<int> getBalance() async {
     final token = await _auth.getValidAccessToken();
     final response = await http.get(
@@ -411,6 +395,7 @@ class ApiService {
     }
   }
 
+  /// Покупка товара в магазине
   Future<bool> purchaseProduct(int productId) async {
     final token = await _auth.getValidAccessToken();
     final response = await http.post(

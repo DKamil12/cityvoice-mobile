@@ -2,9 +2,11 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:cityvoice/models/survey_stat.dart';
 
+
+// Виджет CorrelationChart отображает диаграмму с данными корреляции для выбранных категорий
 class CorrelationChart extends StatefulWidget {
-  final List<CategoryCorrelationStat> data;
-  final List<Color> barColors;
+  final List<CategoryCorrelationStat> data; // Список данных (категории)
+  final List<Color> barColors; // Цвета для диаграмм
 
   const CorrelationChart({super.key, required this.data, required this.barColors});
 
@@ -13,12 +15,13 @@ class CorrelationChart extends StatefulWidget {
 }
 
 class _CorrelationChartState extends State<CorrelationChart> with TickerProviderStateMixin {
-  late final TabController _tabController;
-  int _currentIndex = 0;
+  late final TabController _tabController; // Контроллер вкладок
+  int _currentIndex = 0; // Текущий индекс выбранной категории
 
   @override
   void initState() {
     super.initState();
+    // Инициализация контроллера вкладок (по количеству категорий)
     _tabController = TabController(length: widget.data.length, vsync: this);
     _tabController.addListener(() {
       if (!_tabController.indexIsChanging) {
@@ -35,12 +38,14 @@ class _CorrelationChartState extends State<CorrelationChart> with TickerProvider
 
   @override
   Widget build(BuildContext context) {
-    final maxRating = 10.0;
+    final maxRating = 10.0; // Максимальная оценка (для шкалы)
+    // Определяем максимальное количество жалоб (для масштабирования диаграмм)
     final maxComplaint = widget.data.map((e) => e.complaintCount).fold<int>(0, (prev, el) => el > prev ? el : prev);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Основная диаграмма с оценками
         SizedBox(
           height: 260,
           child: BarChart(
@@ -89,6 +94,7 @@ class _CorrelationChartState extends State<CorrelationChart> with TickerProvider
           ),
         ),
         const SizedBox(height: 16),
+        // Легенда для диаграммы (цвета и названия категорий)
         ...widget.data.asMap().entries.map(
           (entry) => Padding(
             padding: const EdgeInsets.symmetric(vertical: 4),
@@ -123,6 +129,7 @@ class _CorrelationChartState extends State<CorrelationChart> with TickerProvider
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 12),
+        // Отображение детализированной диаграммы по каждой категории (с вкладками)
         SizedBox(
           height: 360,
           child: Column(
@@ -132,6 +139,7 @@ class _CorrelationChartState extends State<CorrelationChart> with TickerProvider
                   controller: _tabController,
                   children: widget.data.map((item) {
                     final barColor = widget.barColors[widget.data.indexOf(item) % widget.barColors.length];
+                    // Перевод количества жалоб в шкалу 0-10
                     final complaintRatio = maxComplaint > 0
                         ? (item.complaintCount / maxComplaint) * 10
                         : 0.0;

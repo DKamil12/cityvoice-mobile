@@ -4,7 +4,9 @@ import 'dart:convert';
 import 'log_in.dart';
 import 'package:cityvoice/services/auth_service.dart';
 import 'menu_shell.dart';
+import 'package:cityvoice/pages/password_widgets.dart';
 
+/// Экран для регистрации нового пользователя
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
 
@@ -16,21 +18,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
   final _authService = AuthService();
 
+  // Контроллеры для текстовых полей
   final _usernameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _password2Controller = TextEditingController();
+  final _passwordConfirmController = TextEditingController();
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
 
   bool _isLoading = false;
 
+  /// Метод отправки данных регистрации на сервер
   Future<void> _register() async {
+    // Проверяем, что форма валидна
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
 
-    final url = Uri.parse('https://cityvoice-api.onrender.com/api/v1/register/');
+    final url = Uri.parse(
+      'https://cityvoice-api.onrender.com/api/v1/register/',
+    );
     final response = await http.post(
       url,
       headers: {'Content-Type': 'application/json'},
@@ -46,6 +53,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() => _isLoading = false);
 
     if (response.statusCode == 201) {
+      // Если регистрация успешна, сохраняем токены и переходим на главный экран
       final data = jsonDecode(response.body);
       await _authService.saveTokens(data['access'], data['refresh']);
 
@@ -54,6 +62,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         MaterialPageRoute(builder: (_) => const MainShell()),
       );
     } else {
+      // Отображаем сообщение об ошибке
       final error = jsonDecode(response.body);
       final message = error['message'] ?? 'Ошибка регистрации';
       ScaffoldMessenger.of(
@@ -62,6 +71,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
+  /// Декоратор для текстовых полей с общими стилями
   InputDecoration _inputDecoration(String label) {
     return InputDecoration(
       labelText: label,
@@ -82,22 +92,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
           key: _formKey,
           child: ListView(
             children: [
-              Center(
-                child: const Text(
+              // Заголовок
+              const Center(
+                child: Text(
                   'Регистрация',
                   style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                 ),
               ),
               const SizedBox(height: 6),
-
-              Center(
-                child: const Text(
-                  'Добро пожаловать',
-                  style: TextStyle(fontSize: 16),
-                ),
+              const Center(
+                child: Text('Добро пожаловать', style: TextStyle(fontSize: 16)),
               ),
               const SizedBox(height: 24),
 
+              // Поля формы
               TextFormField(
                 controller: _usernameController,
                 decoration: _inputDecoration('Имя пользователя'),
@@ -128,27 +136,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
               const SizedBox(height: 10),
 
-              TextFormField(
-                controller: _passwordController,
-                decoration: _inputDecoration('Пароль'),
-                obscureText: true,
-                validator:
-                    (value) => value!.length < 8 ? 'Минимум 8 символов' : null,
-              ),
+              PasswordField(controller: _passwordController),
               const SizedBox(height: 10),
 
-              TextFormField(
-                controller: _password2Controller,
-                decoration: _inputDecoration('Повторить пароль'),
-                obscureText: true,
-                validator:
-                    (val) =>
-                        val != _passwordController.text
-                            ? 'Пароли не совпадают'
-                            : null,
+              ConfirmPasswordField(
+                controller: _passwordConfirmController,
+                originalPasswordController: _passwordController,
               ),
               const SizedBox(height: 24),
 
+              // Кнопка регистрации
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.teal,
@@ -167,6 +164,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
               ),
               const SizedBox(height: 10),
+
+              // Ссылка на экран входа
               TextButton(
                 onPressed: () {
                   Navigator.pushReplacement(

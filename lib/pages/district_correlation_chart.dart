@@ -2,23 +2,31 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:cityvoice/models/survey_stat.dart';
 
-class DistrictCorrelationChart extends StatefulWidget {
-  final List<CategoryCorrelationStat> data;
-  final List<Color> barColors;
 
-  const DistrictCorrelationChart({super.key, required this.data, required this.barColors});
+// Экран для отображения диаграмм (корреляции) для конкретного района
+class DistrictCorrelationChart extends StatefulWidget {
+  final List<CategoryCorrelationStat> data; // Данные по корреляции категорий
+  final List<Color> barColors; // Цвета для столбцов диаграмм
+
+  const DistrictCorrelationChart({
+    super.key,
+    required this.data,
+    required this.barColors,
+  });
 
   @override
   State<DistrictCorrelationChart> createState() => _DistrictCorrelationChartState();
 }
 
-class _DistrictCorrelationChartState extends State<DistrictCorrelationChart> with TickerProviderStateMixin {
-  late final TabController _tabController;
-  int _currentIndex = 0;
+class _DistrictCorrelationChartState extends State<DistrictCorrelationChart>
+    with TickerProviderStateMixin {
+  late final TabController _tabController; // Для переключения между категориями
+  int _currentIndex = 0; // Текущий выбранный индекс
 
   @override
   void initState() {
     super.initState();
+    // Инициализация контроллера вкладок
     _tabController = TabController(length: widget.data.length, vsync: this);
     _tabController.addListener(() {
       if (!_tabController.indexIsChanging) {
@@ -36,11 +44,15 @@ class _DistrictCorrelationChartState extends State<DistrictCorrelationChart> wit
   @override
   Widget build(BuildContext context) {
     final maxRating = 10.0;
-    final maxComplaint = widget.data.map((e) => e.complaintCount).fold<int>(0, (prev, el) => el > prev ? el : prev);
+    // Вычисляем максимальное количество жалоб среди всех категорий
+    final maxComplaint = widget.data
+        .map((e) => e.complaintCount)
+        .fold<int>(0, (prev, el) => el > prev ? el : prev);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Основной график (средние оценки по всем категориям)
         SizedBox(
           height: 260,
           child: BarChart(
@@ -73,7 +85,6 @@ class _DistrictCorrelationChartState extends State<DistrictCorrelationChart> wit
               barGroups: widget.data.asMap().entries.map((entry) {
                 final i = entry.key;
                 final item = entry.value;
-
                 return BarChartGroupData(
                   x: i,
                   barRods: [
@@ -89,6 +100,7 @@ class _DistrictCorrelationChartState extends State<DistrictCorrelationChart> wit
           ),
         ),
         const SizedBox(height: 16),
+        // Легенда для категорий
         ...widget.data.asMap().entries.map(
           (entry) => Padding(
             padding: const EdgeInsets.symmetric(vertical: 4),
@@ -123,6 +135,7 @@ class _DistrictCorrelationChartState extends State<DistrictCorrelationChart> wit
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 12),
+        // Детализированный график (сравнение оценки и количества жалоб)
         SizedBox(
           height: 360,
           child: Column(
@@ -131,7 +144,9 @@ class _DistrictCorrelationChartState extends State<DistrictCorrelationChart> wit
                 child: TabBarView(
                   controller: _tabController,
                   children: widget.data.map((item) {
-                    final barColor = widget.barColors[widget.data.indexOf(item) % widget.barColors.length];
+                    final barColor =
+                        widget.barColors[widget.data.indexOf(item) % widget.barColors.length];
+                    // Вычисляем коэффициент количества жалоб для визуального сравнения
                     final complaintRatio = maxComplaint > 0
                         ? (item.complaintCount / maxComplaint) * 10
                         : 0.0;
@@ -167,15 +182,18 @@ class _DistrictCorrelationChartState extends State<DistrictCorrelationChart> wit
                                       sideTitles: SideTitles(showTitles: true, reservedSize: 30),
                                     ),
                                     bottomTitles: AxisTitles(
-                                      sideTitles: SideTitles(showTitles: true, getTitlesWidget: (value, _) {
-                                        return Padding(
-                                          padding: const EdgeInsets.only(top: 4.0),
-                                          child: Text(
-                                            value.toInt() == 0 ? "Оценка" : "Жалобы",
-                                            style: const TextStyle(fontSize: 10),
-                                          ),
-                                        );
-                                      }),
+                                      sideTitles: SideTitles(
+                                        showTitles: true,
+                                        getTitlesWidget: (value, _) {
+                                          return Padding(
+                                            padding: const EdgeInsets.only(top: 4.0),
+                                            child: Text(
+                                              value.toInt() == 0 ? "Оценка" : "Жалобы",
+                                              style: const TextStyle(fontSize: 10),
+                                            ),
+                                          );
+                                        },
+                                      ),
                                     ),
                                     topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
                                     rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),

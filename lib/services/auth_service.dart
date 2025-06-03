@@ -3,30 +3,37 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:jwt_decoder/jwt_decoder.dart';
 
+/// Сервис для работы с аутентификацией и хранением токенов
 class AuthService {
   static const _baseUrl = 'https://cityvoice-api.onrender.com/api/v1';
   static const _accessKey = 'access_token';
   static const _refreshKey = 'refresh_token';
 
+  // Безопасное хранилище для токенов
   final _storage = const FlutterSecureStorage();
 
+  /// Сохраняет access и refresh токены в безопасном хранилище
   Future<void> saveTokens(String access, String refresh) async {
     await _storage.write(key: _accessKey, value: access);
     await _storage.write(key: _refreshKey, value: refresh);
   }
 
+  /// Возвращает действительный access-токен (автоматически обновляет, если устарел)
   Future<String?> getValidAccessToken() async {
     String? token = await _storage.read(key: _accessKey);
     if (token == null || JwtDecoder.isExpired(token)) {
+      // Если access токен устарел или отсутствует — обновляем
       await _refreshAccessToken();
       token = await _storage.read(key: _accessKey);
     }
     return token;
   }
 
+  /// Обновляет access-токен с помощью refresh-токена
   Future<void> _refreshAccessToken() async {
     final refresh = await _storage.read(key: _refreshKey);
     if (refresh == null || JwtDecoder.isExpired(refresh)) {
+      // Если refresh устарел — сессия считается завершённой
       throw Exception('Refresh token expired');
     }
 
@@ -44,15 +51,18 @@ class AuthService {
     }
   }
 
+  /// Проверяет, авторизован ли пользователь (по refresh-токену)
   Future<bool> isLoggedIn() async {
     final refresh = await _storage.read(key: _refreshKey);
     return refresh != null && !JwtDecoder.isExpired(refresh);
   }
 
+  /// Удаляет все сохранённые токены (выход из системы)
   Future<void> logout() async {
     await _storage.deleteAll();
   }
 
+  /// Выполняет GET-запрос с авторизацией
   Future<http.Response> authorizedGet(String endpoint) async {
     final token = await getValidAccessToken();
     return http.get(
@@ -61,6 +71,7 @@ class AuthService {
     );
   }
 
+  /// Выполняет POST-запрос с авторизацией
   Future<http.Response> authorizedPost(
     String endpoint,
     Map<String, dynamic> body,
@@ -76,9 +87,13 @@ class AuthService {
     );
   }
 
+  /// Получить access-токен (без проверки срока действия)
   Future<String?> getAccessToken() => _storage.read(key: _accessKey);
+
+  /// Получить refresh-токен (без проверки срока действия)
   Future<String?> getRefreshToken() => _storage.read(key: _refreshKey);
 
+  /// Получить полное имя пользователя (first_name + last_name) из access-токена
   Future<String?> getUsername() async {
     final token = await getValidAccessToken();
     if (token != null) {
@@ -88,6 +103,7 @@ class AuthService {
     return null;
   }
 
+  /// Проверить, является ли пользователь сотрудником (is_staff)
   Future<bool> isStaff() async {
     final token = await getValidAccessToken();
     if (token == null) return false;

@@ -5,6 +5,8 @@ import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
+
+/// Экран выбора точки на карте с поиском и определением текущего местоположения
 class MapPickerScreen extends StatefulWidget {
   const MapPickerScreen({Key? key}) : super(key: key);
 
@@ -15,9 +17,10 @@ class MapPickerScreen extends StatefulWidget {
 class _MapPickerScreenState extends State<MapPickerScreen> {
   final MapController _mapController = MapController();
   final TextEditingController _searchController = TextEditingController();
-  LatLng _center = LatLng(43.238949, 76.889709); // начальный центр Алматы
-  LatLng? _selectedPoint;
+  LatLng _center = LatLng(43.238949, 76.889709); // начальный центр - Алматы
+  LatLng? _selectedPoint; // выбранная точка пользователем
 
+  /// Поиск адреса с помощью Nominatim API
   Future<void> _searchAddress() async {
     final query = _searchController.text;
     if (query.isEmpty) return;
@@ -40,22 +43,24 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
 
         final LatLng location = LatLng(lat, lon);
 
+        // Перемещаем карту к найденной точке
         _mapController.move(location, 16);
         setState(() {
           _selectedPoint = location;
         });
       } else {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Ничего не найдено')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Ничего не найдено')),
+        );
       }
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Ошибка поиска: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Ошибка поиска: $e')),
+      );
     }
   }
 
+  /// Определение текущего местоположения пользователя
   Future<void> _goToUserLocation() async {
     bool serviceEnabled;
     LocationPermission permission;
@@ -74,9 +79,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Разрешение на доступ к геолокации отклонено'),
-          ),
+          const SnackBar(content: Text('Разрешение на доступ к геолокации отклонено')),
         );
         return;
       }
@@ -88,6 +91,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
       return;
     }
 
+    // Получаем текущее местоположение
     final position = await Geolocator.getCurrentPosition(
       desiredAccuracy: LocationAccuracy.high,
     );
@@ -102,6 +106,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
     });
   }
 
+  /// Выбор точки (отправка её в предыдущий экран)
   void _selectPoint() {
     if (_selectedPoint != null) {
       Navigator.pop(context, _selectedPoint);
@@ -118,6 +123,7 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
       appBar: AppBar(title: const Text('Выберите точку на карте')),
       body: Stack(
         children: [
+          // Карта с возможностью выбора точки
           FlutterMap(
             mapController: _mapController,
             options: MapOptions(
@@ -151,6 +157,8 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                 ),
             ],
           ),
+
+          // Поиск адреса
           Positioned(
             top: 16,
             left: 16,
@@ -171,6 +179,8 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
               ),
             ),
           ),
+
+          // Кнопка перехода к текущему местоположению
           Positioned(
             bottom: 100,
             right: 16,
@@ -182,6 +192,8 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
               child: const Icon(Icons.my_location),
             ),
           ),
+
+          // Кнопка подтверждения выбора
           Positioned(
             bottom: 30,
             right: 16,

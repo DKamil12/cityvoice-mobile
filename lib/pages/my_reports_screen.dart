@@ -4,7 +4,9 @@ import 'package:cityvoice/models/report.dart';
 import 'package:cityvoice/services/api_service.dart';
 import 'report_details.dart';
 
+/// Экран для отображения всех заявок пользователя с возможностью фильтрации по статусу
 class MyReportsScreen extends StatefulWidget {
+  /// Начальный статус, который нужно отобразить (например, при переходе с кнопки главного экрана)
   final String? initialStatus;
 
   const MyReportsScreen({super.key, this.initialStatus});
@@ -15,10 +17,10 @@ class MyReportsScreen extends StatefulWidget {
 
 class _MyReportsScreenState extends State<MyReportsScreen> {
   final ApiService _apiService = ApiService();
-  bool? _isStaff;
-  List<Report> _allReports = [];
-  List<Report> _filteredReports = [];
-  String? _selectedStatus;
+  bool? _isStaff; // true/false, если пользователь — сотрудник (is_staff)
+  List<Report> _allReports = []; // Все загруженные заявки
+  List<Report> _filteredReports = []; // Отфильтрованные заявки
+  String? _selectedStatus; // Выбранный статус
 
   @override
   void initState() {
@@ -27,8 +29,17 @@ class _MyReportsScreenState extends State<MyReportsScreen> {
     _loadReports();
   }
 
+  /// Загружает список заявок пользователя
   Future<void> _loadReports() async {
-    final reports = await _apiService.getUserReports();
+    await _checkIfStaff();
+    List<Report> reports;
+
+    if (_isStaff == true) {
+      reports = await _apiService.getReports();
+    } else {
+      reports = await _apiService.getUserReports();
+    }
+
     setState(() {
       _allReports = reports;
       _filteredReports = _selectedStatus != null
@@ -37,6 +48,7 @@ class _MyReportsScreenState extends State<MyReportsScreen> {
     });
   }
 
+  /// Проверяет, является ли пользователь сотрудником (is_staff)
   Future<void> _checkIfStaff() async {
     bool isStaff = await AuthService().isStaff();
     setState(() {
@@ -44,6 +56,7 @@ class _MyReportsScreenState extends State<MyReportsScreen> {
     });
   }
 
+  /// Обновляет фильтрацию по выбранному статусу
   void _onFilterChange(String? status) {
     setState(() {
       _selectedStatus = status;
@@ -55,8 +68,7 @@ class _MyReportsScreenState extends State<MyReportsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    _checkIfStaff();
-
+    // Определяем доступные статусы для фильтрации
     final statusOptions = [
       {'label': 'Все', 'value': null},
       {'label': 'Новые', 'value': 'pending'},
@@ -70,6 +82,7 @@ class _MyReportsScreenState extends State<MyReportsScreen> {
       body: Column(
         children: [
           const SizedBox(height: 8),
+          // Горизонтальный список фильтров
           SizedBox(
             height: 40,
             child: ListView.builder(
@@ -90,6 +103,8 @@ class _MyReportsScreenState extends State<MyReportsScreen> {
             ),
           ),
           const SizedBox(height: 12),
+
+          // Список отфильтрованных заявок
           Expanded(
             child: RefreshIndicator(
               onRefresh: _loadReports,
@@ -101,13 +116,20 @@ class _MyReportsScreenState extends State<MyReportsScreen> {
                     margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     child: ListTile(
                       title: Text(report.name),
-                      subtitle: Text(report.description, maxLines: 2, overflow: TextOverflow.ellipsis),
-                      trailing: Icon(Icons.arrow_forward_ios, size: 16),
+                      subtitle: Text(
+                        report.description,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                       onTap: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => ReportDetailsScreen(report: report, isStaff: _isStaff!),
+                            builder: (_) => ReportDetailsScreen(
+                              report: report,
+                              isStaff: _isStaff!,
+                            ),
                           ),
                         );
                       },

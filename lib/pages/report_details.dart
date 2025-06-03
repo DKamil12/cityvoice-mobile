@@ -2,16 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import '../models/report.dart';
-import 'FullImageScreen.dart';
-import 'FullMapScreen.dart';
+import 'full_image_screen.dart';
+import 'full_map_screen.dart';
 import 'package:cityvoice/services/api_service.dart';
-import 'ReportProcessingScreen.dart';
+import 'report_processing_screen.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+
+/// Экран с подробной информацией о конкретной жалобе (Report)
 class ReportDetailsScreen extends StatefulWidget {
-  final Report report;
-  final bool isStaff;
+  final Report report; // Жалоба
+  final bool isStaff;  // Флаг - является ли пользователь сотрудником
+
   const ReportDetailsScreen({super.key, required this.report, required this.isStaff});
 
   @override
@@ -25,10 +28,11 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> {
   @override
   void initState() {
     super.initState();
-    _loadAddress();
-    _checkReward();
+    _loadAddress(); // Загружаем адрес жалобы по координатам
+    _checkReward(); // Проверяем, есть ли вознаграждение для пользователя
   }
 
+  /// Проверка наличия вознаграждения за решение жалобы
   Future<void> _checkReward() async {
     final prefs = await SharedPreferences.getInstance();
     final shown = prefs.getBool('reward_shown_${widget.report.id}') ?? false;
@@ -42,6 +46,7 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> {
     }
   }
 
+  /// Диалоговое окно с поздравлением о получении награды
   void _showRewardDialog() {
     showDialog(
       context: context,
@@ -67,14 +72,12 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> {
     );
   }
 
+  /// Загружаем адрес по координатам
   Future<void> _loadAddress() async {
-    final api = ApiService();
     final coords = LatLng(widget.report.latitude!, widget.report.longitude!);
-    final fetched = await api.getAddressFromCoordinates(coords);
+    final fetched = await _api.getAddressFromCoordinates(coords);
     if (mounted) {
-      setState(() {
-        _address = fetched;
-      });
+      setState(() => _address = fetched);
     }
   }
 
@@ -82,6 +85,7 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> {
   Widget build(BuildContext context) {
     final report = widget.report;
 
+    // Массив с метками статусов
     final statuses = [
       {'label': 'В процессе', 'status': 'in_progress'},
       {'label': 'Новая', 'status': 'pending'},
@@ -89,11 +93,11 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> {
       {'label': 'Отклонена', 'status': 'rejected'},
     ];
 
+    // Определяем читаемый статус
     final label =
         statuses.firstWhere(
           (item) => item['status'] == report.status,
-          orElse:
-              () => {'label': report.status}, // fallback если статус не найден
+          orElse: () => {'label': report.status},
         )['label']!;
 
     return Scaffold(
@@ -107,6 +111,7 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Фото жалобы
             Container(
               height: 180,
               width: double.infinity,
@@ -114,64 +119,53 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> {
                 color: Colors.grey[300],
                 borderRadius: BorderRadius.circular(8),
               ),
-              child:
-                  report.image != null
-                      ? GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder:
-                                  (_) =>
-                                      FullImageScreen(imageUrl: report.image!),
-                            ),
-                          );
-                        },
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: Image.network(
-                            report.image!,
-                            height: 200,
-                            fit: BoxFit.cover,
+              child: report.image != null
+                  ? GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => FullImageScreen(imageUrl: report.image!),
                           ),
+                        );
+                      },
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.network(
+                          report.image!,
+                          height: 200,
+                          fit: BoxFit.cover,
                         ),
-                      )
-                      : const Center(child: Icon(Icons.image, size: 50)),
+                      ),
+                    )
+                  : const Center(child: Icon(Icons.image, size: 50)),
             ),
             const SizedBox(height: 16),
+
+            // Статус
             Row(
               children: [
-                const Text(
-                  "Статус: ",
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                Text(
-                  label,
-                  style: const TextStyle(fontStyle: FontStyle.italic),
-                ),
+                const Text("Статус: ", style: TextStyle(fontWeight: FontWeight.bold)),
+                Text(label, style: const TextStyle(fontStyle: FontStyle.italic)),
               ],
             ),
             const SizedBox(height: 8),
+
+            // Категория
             Row(
               children: [
-                const Text(
-                  "Категория жалобы: ",
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                Text(
-                  report.categoryName,
-                  style: const TextStyle(color: Colors.green),
-                  softWrap: true,
-                ),
+                const Text("Категория жалобы: ", style: TextStyle(fontWeight: FontWeight.bold)),
+                Text(report.categoryName, style: const TextStyle(color: Colors.green), softWrap: true),
               ],
             ),
             const SizedBox(height: 12),
+
+            // Описание
             Text(report.description, softWrap: true),
             const SizedBox(height: 24),
-            const Text(
-              "Местоположение",
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
+
+            // Карта
+            const Text("Местоположение", style: TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             GestureDetector(
               onTap: () {
@@ -179,13 +173,9 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder:
-                          (_) => FullMapScreen(
-                            location: LatLng(
-                              report.latitude!,
-                              report.longitude!,
-                            ),
-                          ),
+                      builder: (_) => FullMapScreen(
+                        location: LatLng(report.latitude!, report.longitude!),
+                      ),
                     ),
                   );
                 } else {
@@ -196,39 +186,25 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> {
               },
               child: Container(
                 height: 150,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(8),
-                ),
+                decoration: BoxDecoration(borderRadius: BorderRadius.circular(8)),
                 clipBehavior: Clip.hardEdge,
                 child: FlutterMap(
                   options: MapOptions(
-                    initialCenter: LatLng(
-                      report.latitude ?? 0,
-                      report.longitude ?? 0,
-                    ),
+                    initialCenter: LatLng(report.latitude ?? 0, report.longitude ?? 0),
                     initialZoom: 15,
-                    // interactionOptions: InteractiveFlag.none,
                   ),
                   children: [
                     TileLayer(
-                      urlTemplate:
-                          'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                      urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                       userAgentPackageName: 'com.example.cityvoice',
                     ),
                     MarkerLayer(
                       markers: [
                         Marker(
-                          point: LatLng(
-                            report.latitude ?? 0,
-                            report.longitude ?? 0,
-                          ),
+                          point: LatLng(report.latitude ?? 0, report.longitude ?? 0),
                           width: 40,
                           height: 40,
-                          child: const Icon(
-                            Icons.location_on,
-                            color: Colors.red,
-                            size: 40,
-                          ),
+                          child: const Icon(Icons.location_on, color: Colors.red, size: 40),
                         ),
                       ],
                     ),
@@ -236,7 +212,6 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> {
                 ),
               ),
             ),
-
             const SizedBox(height: 8),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -249,6 +224,8 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> {
               ],
             ),
             const SizedBox(height: 16),
+
+            // Автор жалобы
             Row(
               children: [
                 const CircleAvatar(radius: 18, child: Icon(Icons.person)),
@@ -256,19 +233,16 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      report.fullName,
-                      style: const TextStyle(fontWeight: FontWeight.w500),
-                    ),
-                    Text(
-                      '@${report.username}',
-                      style: const TextStyle(fontSize: 12, color: Colors.grey),
-                    ),
+                    Text(report.fullName, style: const TextStyle(fontWeight: FontWeight.w500)),
+                    Text('@${report.username}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
                   ],
                 ),
               ],
             ),
+
             const SizedBox(height: 24),
+
+            // Комментарии, если есть
             if (report.comments != null && report.comments!.isNotEmpty) ...[
               const Text('Комментарии', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
               const SizedBox(height: 12),
@@ -290,15 +264,13 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> {
                         children: [
                           const Icon(Icons.person, size: 16, color: Colors.grey),
                           const SizedBox(width: 6),
-                          Text(
-                            "${comment['user']['first_name']} ${comment['user']['last_name']}",
-                            style: const TextStyle(fontWeight: FontWeight.w500),
-                          ),
-                          const Spacer(),
-                          Text(
-                            formattedDate,
-                            style: const TextStyle(fontSize: 12, color: Colors.grey),
-                          ),
+                          Text("${comment['user']['first_name']} ${comment['user']['last_name']}",
+                              style: const TextStyle(fontWeight: FontWeight.w500))
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          Text(formattedDate, style: const TextStyle(fontSize: 12, color: Colors.grey)),
                         ],
                       ),
                       const SizedBox(height: 6),
@@ -308,7 +280,10 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> {
                 );
               }),
             ],
+
             const SizedBox(height: 24),
+
+            // Кнопка обработки для сотрудников
             if (widget.isStaff)
               SizedBox(
                 width: double.infinity,
@@ -326,13 +301,10 @@ class _ReportDetailsScreenState extends State<ReportDetailsScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.teal,
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
                 ),
               ),
-            const SizedBox(height: 24),
           ],
         ),
       ),
